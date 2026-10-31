@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexo · Dashboard académico
 
-## Getting Started
+Dashboard de gestión de proyectos con Next.js 16, React 19, TypeScript, Tailwind CSS v4 y shadcn/ui. Conserva las cinco pestañas y los componentes originales ProjectForm y TasksTable, ahora conectados a un estado compartido.
 
-First, run the development server:
+## Ejecutar
 
-```bash
+Requiere Node.js 22.20 o posterior (las pruebas usan eliminación nativa de tipos).
+
+```powershell
+cd C:\WEB_AVANZADO\tarea-dashboard-shadcn\next-shadcn-ui
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir la URL que indique Next.js y visitar `/dashboard`. `/` redirige al dashboard. Si el puerto está ocupado, usar `npm run dev -- --port 3002` después de cerrar otros servidores de este mismo proyecto.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Los scripts usan Webpack y el adaptador oficial `@tailwindcss/postcss`: Turbopack presentó un fallo interno al ejecutar el procesador CSS en este entorno Windows. Se usan fuentes del sistema para evitar descargas de Google Fonts durante la compilación.
 
-## Learn More
+## Funcionalidades
 
-To learn more about Next.js, take a look at the following resources:
+- Proyectos: creación, consulta de detalles, edición y eliminación confirmada; descripción, categoría, prioridad, estado y selección de miembros.
+- Equipo: CRUD con userId único, role, name, email, position, birthdate, phone, projectId e isActive. Validación de obligatorios, correo único sin distinguir mayúsculas, teléfono y nacimiento no futuro.
+- Tareas: CRUD con description, projectId, status, priority, userId y deadline; responsable activo del proyecto, calendario y filtros combinados. Paginación real de cinco registros por página, que se ajusta al reducirse los resultados.
+- Configuración: nombre, correo, confirmaciones, tema claro/oscuro, vista compacta y visibilidad de actividad. Guardado simulado de 450 ms y confirmación.
+- Resumen: proyectos, total de tareas, completadas, pendientes, tareas en progreso, miembros activos y progreso por proyecto calculados desde los registros. Actividad generada únicamente por operaciones reales de la sesión.
+- Diseño responsive con paleta azul, turquesa y violeta, estados vacíos y formularios reutilizables.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estado y relaciones
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El estado vive en `DashboardPage`, por encima de Tabs, y se actualiza funcionalmente mediante `applyAction`. No hay backend, endpoints, base de datos, localStorage ni sessionStorage. Cambiar de pestaña conserva los registros guardados; recargar la página los restaura a los ejemplos iniciales. Los borradores no guardados pueden descartarse al salir de una pestaña.
 
-## Deploy on Vercel
+Cada miembro pertenece como máximo a un proyecto (projectId). Asignarlo desde un proyecto lo traslada del anterior. Sus tareas anteriores quedan sin responsable. Desactivar o eliminar a un miembro también desasigna sus tareas. Eliminar un proyecto elimina sus tareas y deja a sus miembros sin proyecto. Ninguna operación de eliminación deja referencias rotas.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+El progreso es tareas completadas / total de tareas; vale 0 si no hay tareas. El estado administrativo del proyecto se edita independientemente de este progreso. Los roles son datos académicos, sin autenticación ni permisos reales. Notificaciones significa mostrar confirmaciones dentro del dashboard; no envía correos ni notificaciones del sistema.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Componentes shadcn/ui
+
+Instalados oficialmente: Alert, Calendar, Pagination, Spinner, Popover, Textarea y Progress. Se reutilizan Avatar, Badge, Button, Card, Checkbox, Dialog, Input, Label, Select, Table y Tabs. Calendar usa react-day-picker y date-fns.
+
+## Archivos de la implementación
+
+Modificados:
+- `app/dashboard/page.tsx`: composición, cinco pestañas y estado compartido.
+- `components/ProjectForm.tsx`: formulario funcional con edición y equipo.
+- `components/TasksTable.tsx`: gestión de tareas, filtros y paginación.
+- `app/globals.css`: tokens de color, temas, espaciado y animación accesible.
+- `app/layout.tsx`, `app/page.tsx`: metadatos, idioma español y acceso al dashboard.
+- `package.json`, `package-lock.json`, `next.config.ts`: dependencias, verificaciones y compilación.
+
+Creados:
+- `lib/dashboard.ts`: tipos, ejemplos, operaciones y selectores.
+- `components/DashboardForms.tsx`: formularios, validación, calendario, detalles y confirmación.
+- `components/Team.tsx`, `components/Settings.tsx`: módulos de equipo y preferencias.
+- `components/ui/{alert,calendar,pagination,spinner,popover,textarea,progress}.tsx`.
+- `postcss.config.mjs`, `tests/dashboard.test.mjs`.
+
+El repositorio ya tenía cambios locales al comenzar; se conservaron los componentes instalados y se trabajó únicamente dentro del proyecto.
+
+## Verificación
+
+Cinco pruebas automatizadas de lógica cubren CRUD, cascada de eliminación, traslado/desactivación de responsables, métricas, filtros, paginación y aislamiento del estado inicial. No sustituyen una suite completa de pruebas de navegador. Se verificaron además manualmente en el navegador validación de obligatorios, creación/listado/detalles de proyecto, navegación entre pestañas, segunda página de tareas selección de fecha desde Calendar, formulario completo de miembros, guardado de configuración y restablecimiento de datos al recargar.
+
+## Despliegue en Vercel
+
+Importar el repositorio y seleccionar `next-shadcn-ui` como Root Directory si el repositorio incluye la carpeta superior. Seleccionar Next.js, usar `npm ci` y `npm run build`, y mantener la salida predeterminada del framework. Usar una versión de Node compatible con Next.js y las pruebas (22.20+). No requiere variables de entorno ni servicios de datos. Comprobar `/dashboard` en la preview antes de publicar. Cada visitante y cada recarga empiezan con datos de ejemplo; Vercel no añade persistencia a este estado en React.
